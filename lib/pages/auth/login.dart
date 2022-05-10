@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:saver/pages/auth/signup.dart';
+import 'package:saver/services/auth_services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Login extends StatefulWidget {
   const Login({Key? key, required this.typeOfWidget}) : super(key: key);
@@ -9,8 +11,9 @@ class Login extends StatefulWidget {
 }
 
 class _LoginState extends State<Login> {
+  final AuthService _auth = AuthService();
   final formKey = GlobalKey<FormState>();
-  final TextEditingController _controllerUsername = TextEditingController();
+  final TextEditingController _controllerEmail = TextEditingController();
   final TextEditingController _controllerPassword = TextEditingController();
   final TextStyle dimStyle = const TextStyle(
     fontSize: 16,
@@ -19,6 +22,7 @@ class _LoginState extends State<Login> {
   );
 
   String? defaultValidator(String? value) {
+    if (value == null || value.isEmpty) return "Invalid data";
     return null;
   }
 
@@ -75,9 +79,9 @@ class _LoginState extends State<Login> {
               children: [
                 const SizedBox(height: 30),
                 myTextField(
-                  controller: _controllerUsername,
+                  controller: _controllerEmail,
                   context: context,
-                  hintText: 'Username',
+                  hintText: 'Email',
                   toObscure: false,
                   customValidator: defaultValidator,
                   textInputAction: TextInputAction.next,
@@ -93,8 +97,36 @@ class _LoginState extends State<Login> {
                 ),
                 const SizedBox(height: 30),
                 ElevatedButton(
-                  onPressed: () {
-                    formKey.currentState!.validate();
+                  onPressed: () async {
+                    if (formKey.currentState!.validate()) {
+                      final user = await _auth.signInWithEmailAndPassword(
+                          _controllerEmail.text, _controllerPassword.text);
+                      if (user != null) {
+                        SharedPreferences prefs =
+                            await SharedPreferences.getInstance();
+                        await prefs.setString('email', _controllerEmail.text);
+                        await prefs.setBool('logged', true);
+                        await prefs.setString('type', widget.typeOfWidget);
+                        //TODO : Implement signout functionality along with shared preference clearance
+                        // TODO : Find some stickers and make the app look cool
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text('User ' + user.email + 'logged in!'),
+                        ));
+                        if (widget.typeOfWidget == 'Student') {
+                          Navigator.pushReplacementNamed(
+                              context, 'StudentHome');
+                        } else {
+                          Navigator.pushReplacementNamed(
+                              context, 'ManagerHome');
+                        }
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Invalid Credentials'),
+                          ),
+                        );
+                      }
+                    }
                   },
                   child: const Text(
                     'Login',
@@ -118,7 +150,7 @@ class _LoginState extends State<Login> {
                           context,
                           MaterialPageRoute(
                             builder: (context) =>
-                                const SignUp(typeOfWidget: 'Student'),
+                                SignUp(typeOfWidget: widget.typeOfWidget),
                           ),
                         );
                       },

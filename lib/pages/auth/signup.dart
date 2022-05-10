@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:saver/pages/auth/login.dart';
+import 'package:saver/services/auth_services.dart';
 
 class SignUp extends StatefulWidget {
   const SignUp({Key? key, required this.typeOfWidget}) : super(key: key);
@@ -9,8 +10,9 @@ class SignUp extends StatefulWidget {
 }
 
 class _SignUpState extends State<SignUp> {
+  final AuthService _auth = AuthService();
   final formKey = GlobalKey<FormState>();
-  final TextEditingController _controllerUsername = TextEditingController();
+  final TextEditingController _controllerEmail = TextEditingController();
   final TextEditingController _controllerPassword = TextEditingController();
   final TextEditingController _controllerFirstName = TextEditingController();
   final TextEditingController _controllerLastName = TextEditingController();
@@ -22,6 +24,7 @@ class _SignUpState extends State<SignUp> {
   );
 
   String? defaultValidator(String? value) {
+    if (value == null || value.isEmpty) return "Invalid data";
     return null;
   }
 
@@ -64,6 +67,7 @@ class _SignUpState extends State<SignUp> {
 
   @override
   Widget build(BuildContext context) {
+    final String _temp = widget.typeOfWidget;
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.typeOfWidget + ' SignUp'),
@@ -106,9 +110,9 @@ class _SignUpState extends State<SignUp> {
                 const SizedBox(height: 30),
                 myTextField(
                   customValidator: defaultValidator,
-                  controller: _controllerUsername,
+                  controller: _controllerEmail,
                   context: context,
-                  hintText: 'Username',
+                  hintText: 'Email',
                   toObscure: false,
                   textInputAction: TextInputAction.next,
                 ),
@@ -124,7 +128,23 @@ class _SignUpState extends State<SignUp> {
                 const SizedBox(height: 30),
                 ElevatedButton(
                   onPressed: () {
-                    formKey.currentState!.validate();
+                    if (formKey.currentState!.validate()) {
+                      _auth.signUpWithEmailAndPassword(
+                          _controllerFirstName.text +
+                              ' ' +
+                              _controllerLastName.text,
+                          _controllerAdmissionNo.text,
+                          _controllerEmail.text,
+                          _controllerPassword.text);
+
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              Login(typeOfWidget: widget.typeOfWidget),
+                        ),
+                      );
+                    }
                   },
                   child: const Text(
                     'SignUp',
@@ -148,7 +168,7 @@ class _SignUpState extends State<SignUp> {
                           context,
                           MaterialPageRoute(
                             builder: (context) =>
-                                const Login(typeOfWidget: 'Student'),
+                                Login(typeOfWidget: widget.typeOfWidget),
                           ),
                         );
                       },
